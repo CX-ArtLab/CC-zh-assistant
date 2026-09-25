@@ -32,6 +32,7 @@ Write-Host "Compiling Claude Code 桌面版中文助手 (CCZhAssistant)..." -For
     "/resource:$projectRoot\translation\manifest.json,BundledTranslationManifest" `
     "/resource:$sourceRoot\Assets\assistant-icon.ico,AssistantIcon" `
     "/resource:$sourceRoot\Assets\assistant-icon.png,AssistantIconPng" `
+    "/resource:$sourceRoot\Assets\translator.js,TranslatorJs" `
     "/out:$outputPath" `
     "$sourceRoot\Program.cs"
 

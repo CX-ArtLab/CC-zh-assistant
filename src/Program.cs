@@ -36,10 +36,41 @@ namespace CCZhAssistant
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr window);
 
+        [DllImport("kernel32.dll")]
+        private static extern bool AttachConsole(int dwProcessId);
+        private const int ATTACH_PARENT_PROCESS = -1;
+
         [STAThread]
         private static void Main(string[] args)
         {
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+
+            bool isApply = Array.Exists(args, delegate(string a) { return string.Equals(a, "--apply", StringComparison.OrdinalIgnoreCase); });
+            bool isRestore = Array.Exists(args, delegate(string a) { return string.Equals(a, "--restore", StringComparison.OrdinalIgnoreCase); });
+
+            if (isApply || isRestore)
+            {
+                AttachConsole(ATTACH_PARENT_PROCESS);
+                MainForm.ClaudeEnvironment cliEnv = MainForm.DetectClaudeEnvironment();
+                if (!cliEnv.IsInstalled)
+                {
+                    Console.WriteLine("[CCZhAssistant] 未检测到 Claude Desktop 安装。");
+                    return;
+                }
+
+                if (isApply)
+                {
+                    MainForm.PerformApplyLocalization(cliEnv);
+                    Console.WriteLine("[CCZhAssistant] Claude Desktop 中文汉化包已成功应用！");
+                }
+                else
+                {
+                    MainForm.PerformRestoreOfficial(cliEnv);
+                    Console.WriteLine("[CCZhAssistant] Claude Desktop 已成功恢复官方英文原版！");
+                }
+                return;
+            }
+
             bool created;
             using (Mutex mutex = new Mutex(true, "Local\\CCZhAssistant.Singleton", out created))
             using (EventWaitHandle activationEvent = new EventWaitHandle(false, EventResetMode.AutoReset, "Local\\CCZhAssistant.Activate"))
@@ -115,8 +146,8 @@ namespace CCZhAssistant
         private bool busy;
         private bool isCurrentlyLocalized;
         private string detectedClaudeVersion = "未检测";
-        private int translatedCount = 13062;
-        private int pendingCount = 0;
+        private static int translatedCount = 16366;
+        private static int pendingCount = 0;
         private DateTime lastAppliedTime = DateTime.MinValue;
 
         private static string DataDirectory
@@ -466,7 +497,7 @@ namespace CCZhAssistant
         // Claude Detection & Environment
         // ==========================================
 
-        private sealed class ClaudeEnvironment
+        internal sealed class ClaudeEnvironment
         {
             public bool IsInstalled { get; set; }
             public string AppPath { get; set; }
@@ -475,7 +506,7 @@ namespace CCZhAssistant
             public bool IsRunning { get; set; }
         }
 
-        private ClaudeEnvironment DetectClaudeEnvironment()
+        internal static ClaudeEnvironment DetectClaudeEnvironment()
         {
             ClaudeEnvironment env = new ClaudeEnvironment();
 
@@ -612,27 +643,7 @@ namespace CCZhAssistant
             }
 
             string zhJson = Path.Combine(env.ResourcesPath, "ion-dist", "i18n", "zh-CN.json");
-            if (!File.Exists(zhJson))
-            {
-                return false;
-            }
-
-            // Check config.json
-            string cfgPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Claude", "config.json");
-            if (File.Exists(cfgPath))
-            {
-                try
-                {
-                    string cfg = File.ReadAllText(cfgPath);
-                    if (cfg.IndexOf("zh-CN", StringComparison.OrdinalIgnoreCase) < 0)
-                    {
-                        return false;
-                    }
-                }
-                catch { }
-            }
-
-            return true;
+            return File.Exists(zhJson);
         }
 
         private void EvaluateState()
@@ -814,18 +825,21 @@ namespace CCZhAssistant
             }
         }
 
-        private void PerformApplyLocalization(ClaudeEnvironment env)
+        internal static void PerformApplyLocalization(ClaudeEnvironment env)
         {
             string resources = env.ResourcesPath;
-            string i18nDir = Path.Combine(resources, "ion-dist", "i18n");
+            string ionDist = Path.Combine(resources, "ion-dist");
+            string i18nDir = Path.Combine(ionDist, "i18n");
+            string dynamicDir = Path.Combine(i18nDir, "dynamic");
             string statsigDir = Path.Combine(i18nDir, "statsig");
-            string assetsDir = Path.Combine(resources, "ion-dist", "assets", "v1");
+            string assetsDir = Path.Combine(ionDist, "assets", "v1");
 
             Directory.CreateDirectory(i18nDir);
+            Directory.CreateDirectory(dynamicDir);
             Directory.CreateDirectory(statsigDir);
 
             // Load translation pack (from local update or embedded)
-            Hashtable pack = LoadTranslationPack();
+            IDictionary pack = LoadTranslationPack();
             if (pack == null) throw new Exception("无法加载汉化词典包。");
 
             JavaScriptSerializer serializer = new JavaScriptSerializer();
@@ -839,12 +853,12 @@ namespace CCZhAssistant
                 File.WriteAllText(Path.Combine(i18nDir, "zh-CN.json"), frontendJson, Encoding.UTF8);
             }
 
-            // 2. Write desktop zh-CN.json
-            object desktopObj = pack["desktop"];
-            if (desktopObj != null)
+            // 2. Write dynamic zh-CN.json (models, thinking mode, features)
+            object dynamicObj = pack["dynamic"];
+            if (dynamicObj != null)
             {
-                string desktopJson = serializer.Serialize(desktopObj);
-                File.WriteAllText(Path.Combine(resources, "zh-CN.json"), desktopJson, Encoding.UTF8);
+                string dynamicJson = serializer.Serialize(dynamicObj);
+                File.WriteAllText(Path.Combine(dynamicDir, "zh-CN.json"), dynamicJson, Encoding.UTF8);
             }
 
             // 3. Write statsig zh-CN.json
@@ -855,7 +869,50 @@ namespace CCZhAssistant
                 File.WriteAllText(Path.Combine(statsigDir, "zh-CN.json"), statsigJson, Encoding.UTF8);
             }
 
-            // 4. Patch language whitelist in ion-dist/assets/v1/shared-*.js
+            // 4. Write desktop zh-CN.json & patch resources/en-US.json fallback
+            object desktopObj = pack["desktop"];
+            if (desktopObj != null)
+            {
+                string desktopJson = serializer.Serialize(desktopObj);
+                File.WriteAllText(Path.Combine(resources, "zh-CN.json"), desktopJson, Encoding.UTF8);
+
+                string enDesktopPath = Path.Combine(resources, "en-US.json");
+                if (File.Exists(enDesktopPath))
+                {
+                    string enOrigBackup = Path.Combine(BackupDirectory, "en-US.json.orig");
+                    if (!File.Exists(enOrigBackup))
+                    {
+                        File.Copy(enDesktopPath, enOrigBackup, true);
+                    }
+
+                    try
+                    {
+                        string enContent = File.ReadAllText(enDesktopPath, Encoding.UTF8);
+                        Dictionary<string, object> enDict = serializer.Deserialize<Dictionary<string, object>>(enContent);
+                        IDictionary deskDict = desktopObj as IDictionary;
+                        if (enDict != null && deskDict != null)
+                        {
+                            foreach (DictionaryEntry de in deskDict)
+                            {
+                                enDict[de.Key.ToString()] = de.Value;
+                            }
+                            File.WriteAllText(enDesktopPath, serializer.Serialize(enDict), Encoding.UTF8);
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            // 5. Deploy translator.js and inject into index.html / frame-shell.html
+            string translatorScript = LoadTranslatorScript();
+            if (!string.IsNullOrEmpty(translatorScript))
+            {
+                File.WriteAllText(Path.Combine(ionDist, "translator.js"), translatorScript, Encoding.UTF8);
+                InjectTranslatorScript(Path.Combine(ionDist, "index.html"), BackupDirectory);
+                InjectTranslatorScript(Path.Combine(ionDist, "frame-shell.html"), BackupDirectory);
+            }
+
+            // 6. Patch language whitelist in ion-dist/assets/v1/shared-*.js
             if (Directory.Exists(assetsDir))
             {
                 string[] jsFiles = Directory.GetFiles(assetsDir, "shared-*.js");
@@ -881,12 +938,54 @@ namespace CCZhAssistant
                 }
             }
 
-            // 5. Update user configuration files
-            UpdateUserConfigFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Claude", "config.json"), "zh-CN");
-            UpdateUserConfigFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Claude-3p", "config.json"), "zh-CN");
+            // 7. Update user configuration files across all locations (including MSIX virtualized AppData)
+            UpdateAllClaudeConfigFiles("zh-CN");
 
-            // 6. Scan untranslated strings against en-US.json
+            // 8. Scan untranslated strings against en-US.json
             ScanUntranslatedKeys(resources, frontendObj as IDictionary);
+        }
+
+        internal static void PerformRestoreOfficial(ClaudeEnvironment env)
+        {
+            string resources = env.ResourcesPath;
+            string ionDist = Path.Combine(resources, "ion-dist");
+            string i18nDir = Path.Combine(ionDist, "i18n");
+            string dynamicDir = Path.Combine(i18nDir, "dynamic");
+            string statsigDir = Path.Combine(i18nDir, "statsig");
+            string assetsDir = Path.Combine(ionDist, "assets", "v1");
+
+            // 1. Delete installed zh-CN.json and translator files
+            TryDeleteFile(Path.Combine(i18nDir, "zh-CN.json"));
+            TryDeleteFile(Path.Combine(dynamicDir, "zh-CN.json"));
+            TryDeleteFile(Path.Combine(statsigDir, "zh-CN.json"));
+            TryDeleteFile(Path.Combine(resources, "zh-CN.json"));
+            TryDeleteFile(Path.Combine(ionDist, "translator.js"));
+
+            // 2. Restore shared-*.js from backup
+            if (Directory.Exists(assetsDir) && Directory.Exists(BackupDirectory))
+            {
+                string[] backupFiles = Directory.GetFiles(BackupDirectory, "*.orig");
+                foreach (string bFile in backupFiles)
+                {
+                    string origName = Path.GetFileNameWithoutExtension(bFile);
+                    if (origName.StartsWith("shared-", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string targetPath = Path.Combine(assetsDir, origName);
+                        if (File.Exists(targetPath))
+                        {
+                            File.Copy(bFile, targetPath, true);
+                        }
+                    }
+                }
+            }
+
+            // 3. Restore en-US.json, index.html, frame-shell.html
+            RestoreOriginalFile(Path.Combine(resources, "en-US.json"), BackupDirectory);
+            RestoreOriginalFile(Path.Combine(ionDist, "index.html"), BackupDirectory);
+            RestoreOriginalFile(Path.Combine(ionDist, "frame-shell.html"), BackupDirectory);
+
+            // 4. Reset user configuration to en-US across all locations
+            UpdateAllClaudeConfigFiles("en-US");
         }
 
         private async Task RestoreOfficialAsync(bool showFeedback)
@@ -906,34 +1005,7 @@ namespace CCZhAssistant
 
                 await Task.Run(() =>
                 {
-                    string resources = env.ResourcesPath;
-                    string i18nDir = Path.Combine(resources, "ion-dist", "i18n");
-                    string statsigDir = Path.Combine(i18nDir, "statsig");
-                    string assetsDir = Path.Combine(resources, "ion-dist", "assets", "v1");
-
-                    // 1. Delete installed zh-CN.json files
-                    TryDeleteFile(Path.Combine(i18nDir, "zh-CN.json"));
-                    TryDeleteFile(Path.Combine(resources, "zh-CN.json"));
-                    TryDeleteFile(Path.Combine(statsigDir, "zh-CN.json"));
-
-                    // 2. Restore shared-*.js from backup
-                    if (Directory.Exists(assetsDir) && Directory.Exists(BackupDirectory))
-                    {
-                        string[] backupFiles = Directory.GetFiles(BackupDirectory, "*.orig");
-                        foreach (string bFile in backupFiles)
-                        {
-                            string origName = Path.GetFileNameWithoutExtension(bFile);
-                            string targetPath = Path.Combine(assetsDir, origName);
-                            if (File.Exists(targetPath))
-                            {
-                                File.Copy(bFile, targetPath, true);
-                            }
-                        }
-                    }
-
-                    // 3. Reset user configuration to en-US
-                    UpdateUserConfigFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Claude", "config.json"), "en-US");
-                    UpdateUserConfigFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Claude-3p", "config.json"), "en-US");
+                    PerformRestoreOfficial(env);
                 });
 
                 EvaluateState();
@@ -1037,7 +1109,94 @@ namespace CCZhAssistant
             catch { }
         }
 
-        private void ScanUntranslatedKeys(string resourcesPath, IDictionary activeZhDict)
+        private static void UpdateAllClaudeConfigFiles(string locale)
+        {
+            UpdateUserConfigFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Claude", "config.json"), locale);
+            UpdateUserConfigFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Claude-3p", "config.json"), locale);
+
+            try
+            {
+                string packagesDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Packages");
+                if (Directory.Exists(packagesDir))
+                {
+                    foreach (string claudePkg in Directory.GetDirectories(packagesDir, "Claude_*"))
+                    {
+                        string pkgConfig = Path.Combine(claudePkg, "LocalCache", "Roaming", "Claude", "config.json");
+                        UpdateUserConfigFile(pkgConfig, locale);
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private static string LoadTranslatorScript()
+        {
+            try
+            {
+                using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("TranslatorJs"))
+                {
+                    if (stream != null)
+                    {
+                        using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
+                        {
+                            return reader.ReadToEnd();
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            try
+            {
+                string localAsset = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "translator.js");
+                if (File.Exists(localAsset)) return File.ReadAllText(localAsset, Encoding.UTF8);
+            }
+            catch { }
+
+            return null;
+        }
+
+        private static void InjectTranslatorScript(string htmlPath, string backupDir)
+        {
+            try
+            {
+                if (!File.Exists(htmlPath)) return;
+                string content = File.ReadAllText(htmlPath, Encoding.UTF8);
+                if (content.IndexOf("translator.js", StringComparison.OrdinalIgnoreCase) >= 0) return;
+
+                string fileName = Path.GetFileName(htmlPath);
+                string backupFile = Path.Combine(backupDir, fileName + ".orig");
+                if (!File.Exists(backupFile))
+                {
+                    File.Copy(htmlPath, backupFile, true);
+                }
+
+                int headIdx = content.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
+                if (headIdx >= 0)
+                {
+                    string modified = content.Substring(0, headIdx) + "<script src=\"./translator.js\"></script>" + content.Substring(headIdx);
+                    File.WriteAllText(htmlPath, modified, Encoding.UTF8);
+                }
+            }
+            catch { }
+        }
+
+        private static void RestoreOriginalFile(string targetPath, string backupDir)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(targetPath)) return;
+                string fileName = Path.GetFileName(targetPath);
+                string backupFile = Path.Combine(backupDir, fileName + ".orig");
+                if (File.Exists(backupFile))
+                {
+                    File.Copy(backupFile, targetPath, true);
+                }
+            }
+            catch { }
+        }
+
+        private static void ScanUntranslatedKeys(string resourcesPath, IDictionary activeZhDict)
         {
             try
             {
@@ -1079,24 +1238,12 @@ namespace CCZhAssistant
         // Translation Pack & Updates
         // ==========================================
 
-        private Hashtable LoadTranslationPack()
+        private static IDictionary LoadTranslationPack()
         {
             JavaScriptSerializer serializer = new JavaScriptSerializer();
             serializer.MaxJsonLength = int.MaxValue;
 
-            // 1. Try local updated pack first
-            if (File.Exists(PackPath))
-            {
-                try
-                {
-                    string localJson = File.ReadAllText(PackPath, Encoding.UTF8);
-                    Hashtable localPack = serializer.DeserializeObject(localJson) as Hashtable;
-                    if (localPack != null) return localPack;
-                }
-                catch { }
-            }
-
-            // 2. Fallback to embedded resource
+            IDictionary embeddedPack = null;
             try
             {
                 using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("BundledTranslationPack"))
@@ -1105,15 +1252,33 @@ namespace CCZhAssistant
                     {
                         using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
                         {
-                            string json = reader.ReadToEnd();
-                            return serializer.DeserializeObject(json) as Hashtable;
+                            embeddedPack = serializer.DeserializeObject(reader.ReadToEnd()) as IDictionary;
                         }
                     }
                 }
             }
             catch { }
 
-            return null;
+            if (File.Exists(PackPath))
+            {
+                try
+                {
+                    string localJson = File.ReadAllText(PackPath, Encoding.UTF8);
+                    IDictionary localPack = serializer.DeserializeObject(localJson) as IDictionary;
+                    if (localPack != null)
+                    {
+                        string localVer = localPack.Contains("version") && localPack["version"] != null ? localPack["version"].ToString() : "0.0.0";
+                        string embVer = embeddedPack != null && embeddedPack.Contains("version") && embeddedPack["version"] != null ? embeddedPack["version"].ToString() : "0.0.0";
+                        if (CompareVersion(localVer, embVer) >= 0)
+                        {
+                            return localPack;
+                        }
+                    }
+                }
+                catch { }
+            }
+
+            return embeddedPack;
         }
 
         private async Task CheckPackUpdateAsync(bool forceFeedback)
@@ -1158,8 +1323,8 @@ namespace CCZhAssistant
         {
             try
             {
-                Hashtable pack = LoadTranslationPack();
-                if (pack != null && pack.ContainsKey("version"))
+                IDictionary pack = LoadTranslationPack();
+                if (pack != null && pack.Contains("version") && pack["version"] != null)
                 {
                     return pack["version"].ToString();
                 }
