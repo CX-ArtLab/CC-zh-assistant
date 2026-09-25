@@ -62,7 +62,21 @@ namespace CCZhAssistant
                 {
                     return string.Equals(arg, "--startup", StringComparison.OrdinalIgnoreCase);
                 });
-                Application.Run(new MainForm(startupMode, activationEvent));
+
+                try
+                {
+                    Application.Run(new MainForm(startupMode, activationEvent));
+                }
+                catch (Exception ex)
+                {
+                    try
+                    {
+                        string log = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Claude Code 中文助手", "startup_error.log");
+                        File.WriteAllText(log, ex.ToString(), Encoding.UTF8);
+                    }
+                    catch { }
+                    MessageBox.Show("启动遇到错误：" + ex.Message + "\n\n" + ex.StackTrace, "CCZhAssistant 启动异常", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
         }
     }
@@ -311,36 +325,78 @@ namespace CCZhAssistant
             privacyLabel.Text = "安全保障：仅处理系统界面元素，不修改对话内容、代码或项目文件；随时可一键完全恢复。";
             privacyLabel.ForeColor = Color.FromArgb(120, 124, 130);
             privacyLabel.Location = new Point(24, 228);
-            privacyLabel.Size = new Size(650, 22);
+            privacyLabel.Size = new Size(648, 22);
+            privacyLabel.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
             settingsPanel.Controls.Add(privacyLabel);
 
-            // Bottom Buttons
+            Button exitButton = new Button();
+            exitButton.Text = "退出助手";
+            exitButton.Size = new Size(95, 44);
+            exitButton.BackColor = Color.FromArgb(240, 242, 246);
+            exitButton.ForeColor = Color.FromArgb(90, 94, 100);
+            exitButton.Font = new Font("Microsoft YaHei UI", 9.5F);
+            exitButton.FlatStyle = FlatStyle.Flat;
+            exitButton.FlatAppearance.BorderSize = 0;
+            exitButton.Click += delegate
+            {
+                trayIcon.Visible = false;
+                Application.Exit();
+            };
+            Controls.Add(exitButton);
+
+            Button openDataButton = new Button();
+            openDataButton.Text = "打开配置目录";
+            openDataButton.Size = new Size(115, 44);
+            openDataButton.BackColor = Color.FromArgb(240, 242, 246);
+            openDataButton.ForeColor = Color.FromArgb(90, 94, 100);
+            openDataButton.Font = new Font("Microsoft YaHei UI", 9.5F);
+            openDataButton.FlatStyle = FlatStyle.Flat;
+            openDataButton.FlatAppearance.BorderSize = 0;
+            openDataButton.Click += delegate
+            {
+                try { Process.Start("explorer.exe", DataDirectory); } catch { }
+            };
+            Controls.Add(openDataButton);
+
             applyButton = new Button();
             applyButton.Text = "立即检测并应用";
-            applyButton.Location = new Point(516, 545);
-            applyButton.Size = new Size(212, 46);
+            applyButton.Size = new Size(190, 44);
             applyButton.BackColor = Color.FromArgb(217, 119, 87);
             applyButton.ForeColor = Color.White;
             applyButton.Font = new Font("Microsoft YaHei UI", 10.5F, FontStyle.Bold);
             applyButton.FlatStyle = FlatStyle.Flat;
             applyButton.FlatAppearance.BorderSize = 0;
             applyButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(193, 95, 60);
-            ApplyRoundedRegion(applyButton, 23);
             applyButton.Click += async delegate { await OnApplyButtonClickedAsync(); };
             Controls.Add(applyButton);
 
             hideButton = new Button();
             hideButton.Text = "最小化到托盘";
-            hideButton.Location = new Point(370, 545);
-            hideButton.Size = new Size(134, 46);
+            hideButton.Size = new Size(130, 44);
             hideButton.BackColor = Color.FromArgb(240, 242, 246);
             hideButton.ForeColor = Color.FromArgb(60, 64, 70);
             hideButton.Font = new Font("Microsoft YaHei UI", 9.5F);
             hideButton.FlatStyle = FlatStyle.Flat;
             hideButton.FlatAppearance.BorderSize = 0;
-            ApplyRoundedRegion(hideButton, 23);
             hideButton.Click += delegate { HideToTray(); };
             Controls.Add(hideButton);
+
+            Action updateButtonLayout = delegate
+            {
+                int btnHeight = 44;
+                int btnY = ClientSize.Height - btnHeight - 22;
+                exitButton.Location = new Point(32, btnY);
+                openDataButton.Location = new Point(exitButton.Right + 12, btnY);
+                applyButton.Location = new Point(ClientSize.Width - 32 - applyButton.Width, btnY);
+                hideButton.Location = new Point(applyButton.Left - 14 - hideButton.Width, btnY);
+                ApplyRoundedRegion(exitButton, 22);
+                ApplyRoundedRegion(openDataButton, 22);
+                ApplyRoundedRegion(applyButton, 22);
+                ApplyRoundedRegion(hideButton, 22);
+            };
+
+            updateButtonLayout();
+            Resize += delegate { updateButtonLayout(); };
 
             // System Tray
             trayIcon = new NotifyIcon();
@@ -423,18 +479,108 @@ namespace CCZhAssistant
         {
             ClaudeEnvironment env = new ClaudeEnvironment();
 
-            // 1. Check running processes
-            Process[] processes = Process.GetProcessesByName("claude");
-            env.IsRunning = processes.Length > 0;
+            // 1. Check running processes first (most reliable when Claude is running)
+            try
+            {
+                Process[] processes = Process.GetProcessesByName("claude");
+                if (processes.Length > 0)
+                {
+                    env.IsRunning = true;
+                    foreach (Process p in processes)
+                    {
+                        try
+                        {
+                            string fn = p.MainModule.FileName;
+                            if (string.IsNullOrEmpty(fn) || !fn.EndsWith("claude.exe", StringComparison.OrdinalIgnoreCase)) continue;
 
-            // 2. Search WindowsApps packages
+                            string appDir = Path.GetDirectoryName(fn);
+                            string res = Path.Combine(appDir, "resources");
+                            if (Directory.Exists(res))
+                            {
+                                env.IsInstalled = true;
+                                env.AppPath = appDir;
+                                env.ResourcesPath = res;
+
+                                // Try to extract version from parent folder name e.g. Claude_2.9939.2.0_...
+                                string parentName = Path.GetFileName(Path.GetDirectoryName(appDir));
+                                if (parentName != null && parentName.StartsWith("Claude_", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    string[] parts = parentName.Split('_');
+                                    if (parts.Length > 1) env.Version = parts[1];
+                                }
+                                if (string.IsNullOrEmpty(env.Version))
+                                {
+                                    FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(fn);
+                                    env.Version = fvi.ProductVersion ?? fvi.FileVersion ?? "2.9939.2";
+                                }
+                                return env;
+                            }
+                        }
+                        catch { }
+                    }
+                }
+            }
+            catch { }
+
+            // 2. Check HKCU AppModel Repository (standard for MSIX / Store apps, always accessible without admin)
+            try
+            {
+                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(@"Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages"))
+                {
+                    if (key != null)
+                    {
+                        foreach (string sub in key.GetSubKeyNames())
+                        {
+                            if (sub.StartsWith("Claude", StringComparison.OrdinalIgnoreCase))
+                            {
+                                using (RegistryKey subKey = key.OpenSubKey(sub))
+                                {
+                                    if (subKey != null)
+                                    {
+                                        object rootObj = subKey.GetValue("PackageRootFolder");
+                                        if (rootObj != null)
+                                        {
+                                            string root = rootObj.ToString();
+                                            string res = Path.Combine(root, "app", "resources");
+                                            if (Directory.Exists(res))
+                                            {
+                                                env.IsInstalled = true;
+                                                env.AppPath = Path.Combine(root, "app");
+                                                env.ResourcesPath = res;
+                                                string[] parts = sub.Split('_');
+                                                if (parts.Length > 1) env.Version = parts[1];
+                                                else env.Version = "2.9939.2";
+                                                return env;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            // 3. Search common unpackaged / local directories
+            string localProg = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Claude", "resources");
+            if (Directory.Exists(localProg))
+            {
+                env.IsInstalled = true;
+                env.AppPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Claude");
+                env.ResourcesPath = localProg;
+                env.Version = "本地版";
+                return env;
+            }
+
+            // 4. Fallback search WindowsApps packages with direct pattern if accessible
             string windowsApps = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "WindowsApps");
             if (Directory.Exists(windowsApps))
             {
                 try
                 {
                     string[] dirs = Directory.GetDirectories(windowsApps, "Claude_*");
-                    Array.Sort(dirs); // Pick latest
+                    Array.Sort(dirs);
                     if (dirs.Length > 0)
                     {
                         string latestDir = dirs[dirs.Length - 1];
@@ -444,34 +590,15 @@ namespace CCZhAssistant
                             env.IsInstalled = true;
                             env.AppPath = Path.Combine(latestDir, "app");
                             env.ResourcesPath = res;
-
-                            // Extract version from directory name e.g. Claude_2.9939.2.0_x64__...
                             string dirName = Path.GetFileName(latestDir);
                             string[] parts = dirName.Split('_');
-                            if (parts.Length > 1)
-                            {
-                                env.Version = parts[1];
-                            }
-                            else
-                            {
-                                env.Version = "2.9939.2";
-                            }
+                            if (parts.Length > 1) env.Version = parts[1];
+                            else env.Version = "2.9939.2";
                             return env;
                         }
                     }
                 }
                 catch { }
-            }
-
-            // 3. Search unpackaged / local directories
-            string localProg = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Claude", "resources");
-            if (Directory.Exists(localProg))
-            {
-                env.IsInstalled = true;
-                env.AppPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Claude");
-                env.ResourcesPath = localProg;
-                env.Version = "本地版";
-                return env;
             }
 
             return env;
@@ -854,23 +981,25 @@ namespace CCZhAssistant
                     try { p.Kill(); } catch { }
                 }
 
-                Thread.Sleep(1000);
+                Thread.Sleep(1200);
 
                 string lnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                     "Microsoft", "Windows", "Start Menu", "Programs", "Claude.lnk");
                 if (File.Exists(lnk))
                 {
                     Process.Start(new ProcessStartInfo(lnk) { UseShellExecute = true });
+                    return;
                 }
-                else
+
+                string alias = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Microsoft", "WindowsApps", "claude-desktop.exe");
+                if (File.Exists(alias))
                 {
-                    string alias = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                        "Microsoft", "WindowsApps", "claude-desktop.exe");
-                    if (File.Exists(alias))
-                    {
-                        Process.Start(new ProcessStartInfo(alias) { UseShellExecute = true });
-                    }
+                    Process.Start(new ProcessStartInfo(alias) { UseShellExecute = true });
+                    return;
                 }
+
+                Process.Start(new ProcessStartInfo("explorer.exe", "shell:AppsFolder\\Claude_pzs8sxrjxfjjc!Claude") { UseShellExecute = true });
             }
             catch { }
         }
@@ -1166,20 +1295,40 @@ namespace CCZhAssistant
 
         private static void ApplyRoundedRegion(Control control, int radius)
         {
-            float scale;
-            using (Graphics g = control.CreateGraphics()) scale = g.DpiX / 96F;
-            int r = (int)Math.Round(radius * scale);
-            using (GraphicsPath path = RoundedRectangle(new Rectangle(0, 0, control.Width, control.Height), r))
+            try
             {
-                Region old = control.Region;
-                control.Region = new Region(path);
-                if (old != null) old.Dispose();
+                if (control == null || control.Width <= 0 || control.Height <= 0) return;
+                float scale = 1.0F;
+                try
+                {
+                    using (Graphics g = control.CreateGraphics()) scale = g.DpiX / 96F;
+                }
+                catch { }
+
+                int r = (int)Math.Round(radius * scale);
+                using (GraphicsPath path = RoundedRectangle(new Rectangle(0, 0, control.Width, control.Height), r))
+                {
+                    Region old = control.Region;
+                    control.Region = new Region(path);
+                    if (old != null) old.Dispose();
+                }
             }
+            catch { }
         }
 
         internal static GraphicsPath RoundedRectangle(Rectangle bounds, int radius)
         {
             GraphicsPath path = new GraphicsPath();
+            if (bounds.Width <= 0 || bounds.Height <= 0) return path;
+
+            int maxR = Math.Min(bounds.Width, bounds.Height) / 2;
+            if (radius > maxR) radius = maxR;
+            if (radius <= 0)
+            {
+                path.AddRectangle(bounds);
+                return path;
+            }
+
             int diameter = radius * 2;
             Rectangle arc = new Rectangle(bounds.Location, new Size(diameter, diameter));
 
