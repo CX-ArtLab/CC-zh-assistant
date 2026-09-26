@@ -23,9 +23,22 @@ jobs:
           name: CCZhAssistant-windows
           path: dist/CCZhAssistant-windows.zip
 
+  build-macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build macOS app and ZIP
+        shell: bash
+        run: bash macOS/build-macos.sh
+      - name: Upload macOS build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CCZhAssistant-macOS-apple-silicon
+          path: dist/CCZhAssistant-macOS-apple-silicon.zip
+
   publish:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [build]
+    needs: [build, build-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
