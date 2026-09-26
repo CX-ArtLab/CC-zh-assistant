@@ -139,6 +139,7 @@ namespace CCZhAssistant
 
         private Button applyButton;
         private Button hideButton;
+        private Button restartButton;
         private CheckBox monitorCheckBox;
         private CheckBox adaptCheckBox;
         private CheckBox packUpdateCheckBox;
@@ -403,6 +404,17 @@ namespace CCZhAssistant
             applyButton.Click += async delegate { await OnApplyButtonClickedAsync(); };
             Controls.Add(applyButton);
 
+            restartButton = new Button();
+            restartButton.Text = "重启 Claude";
+            restartButton.Size = new Size(115, 44);
+            restartButton.BackColor = Color.FromArgb(240, 242, 246);
+            restartButton.ForeColor = Color.FromArgb(60, 64, 70);
+            restartButton.Font = new Font("Microsoft YaHei UI", 9.5F);
+            restartButton.FlatStyle = FlatStyle.Flat;
+            restartButton.FlatAppearance.BorderSize = 0;
+            restartButton.Click += delegate { RestartClaude(); };
+            Controls.Add(restartButton);
+
             hideButton = new Button();
             hideButton.Text = "最小化到托盘";
             hideButton.Size = new Size(130, 44);
@@ -419,11 +431,13 @@ namespace CCZhAssistant
                 int btnHeight = 44;
                 int btnY = ClientSize.Height - btnHeight - 22;
                 exitButton.Location = new Point(32, btnY);
-                openDataButton.Location = new Point(exitButton.Right + 12, btnY);
+                openDataButton.Location = new Point(exitButton.Right + 10, btnY);
+                restartButton.Location = new Point(openDataButton.Right + 10, btnY);
                 applyButton.Location = new Point(ClientSize.Width - 32 - applyButton.Width, btnY);
-                hideButton.Location = new Point(applyButton.Left - 14 - hideButton.Width, btnY);
+                hideButton.Location = new Point(applyButton.Left - 12 - hideButton.Width, btnY);
                 ApplyRoundedRegion(exitButton, 22);
                 ApplyRoundedRegion(openDataButton, 22);
+                ApplyRoundedRegion(restartButton, 22);
                 ApplyRoundedRegion(applyButton, 22);
                 ApplyRoundedRegion(hideButton, 22);
             };
@@ -660,6 +674,7 @@ namespace CCZhAssistant
                 detailLabel.Text = "请先下载并安装 Claude Desktop（桌面版客户端）。";
                 applyButton.Enabled = false;
                 applyButton.Text = "未找到目标";
+                if (restartButton != null) restartButton.Enabled = false;
                 versionLabel.Text = "Claude：未安装";
                 return;
             }
@@ -673,10 +688,10 @@ namespace CCZhAssistant
             if (isCurrentlyLocalized)
             {
                 statusDot.BackColor = Color.FromArgb(30, 142, 62); // Green
-                statusLabel.Text = "汉化已生效";
+                statusLabel.Text = "汉化已部署";
                 if (env.IsRunning)
                 {
-                    detailLabel.Text = "对话与核心界面已即时生效。\n提示：顶层系统菜单将在下次启动 Claude 时自动同步。";
+                    detailLabel.Text = "汉化包已部署完成。若当前窗口仍显示英文，请点击下方“重启 Claude”生效。";
                 }
                 else
                 {
@@ -685,17 +700,23 @@ namespace CCZhAssistant
                 applyButton.Enabled = true;
                 applyButton.Text = "恢复官方原版";
                 applyButton.BackColor = Color.FromArgb(60, 64, 70);
-                scanLabel.Text = "状态：已生效";
+                scanLabel.Text = "状态：已部署";
             }
             else
             {
                 statusDot.BackColor = Color.FromArgb(26, 115, 232); // Blue
                 statusLabel.Text = "准备就绪";
-                detailLabel.Text = "已就绪。点击下方按钮即可一键部署汉化包。";
+                detailLabel.Text = "检测到系统已安装 Claude Desktop。点击下方按钮即可一键部署汉化包。";
                 applyButton.Enabled = true;
                 applyButton.Text = "立即检测并应用";
                 applyButton.BackColor = Color.FromArgb(217, 119, 87);
                 scanLabel.Text = "状态：官方原版";
+            }
+
+            if (restartButton != null)
+            {
+                restartButton.Enabled = env.IsInstalled;
+                restartButton.Text = env.IsRunning ? "重启 Claude" : "启动 Claude";
             }
 
             UpdateStatsDisplay();
@@ -796,10 +817,10 @@ namespace CCZhAssistant
                     if (env.IsRunning)
                     {
                         DialogResult restartPrompt = MessageBox.Show(
-                            "中文汉化已成功部署！\n\n主界面与对话功能已即时就绪。\n由于顶层系统菜单需重启加载，是否顺便帮您重启 Claude？\n\n（若选择“否”，顶层菜单将在下次打开 Claude 时自动生效）",
-                            "汉化成功",
+                            "中文汉化已部署完成！\n\n检测到 Claude 正在运行。需要重启 Claude 才能加载生效。\n\n是否立即帮您重启 Claude？",
+                            "汉化完成",
                             MessageBoxButtons.YesNo,
-                            MessageBoxIcon.Information);
+                            MessageBoxIcon.Question);
 
                         if (restartPrompt == DialogResult.Yes)
                         {
@@ -808,11 +829,16 @@ namespace CCZhAssistant
                     }
                     else
                     {
-                        MessageBox.Show(
-                            "中文汉化已成功部署！\n启动 Claude Desktop 即可直接呈现全中文界面。",
-                            "汉化成功",
-                            MessageBoxButtons.OK,
+                        DialogResult launchPrompt = MessageBox.Show(
+                            "中文汉化已成功部署！\n\n是否立即启动 Claude Desktop 查看全中文界面？",
+                            "汉化完成",
+                            MessageBoxButtons.YesNo,
                             MessageBoxIcon.Information);
+
+                        if (launchPrompt == DialogResult.Yes)
+                        {
+                            RestartClaude();
+                        }
                     }
                 }
             }
@@ -1031,10 +1057,10 @@ namespace CCZhAssistant
                     if (env.IsRunning)
                     {
                         DialogResult restartPrompt = MessageBox.Show(
-                            "已成功恢复为官方英文原版！\n\n主界面已还原。\n是否立即帮您重启 Claude 以完全恢复顶层菜单？\n\n（若选择“否”，将在下次打开 Claude 时完全恢复）",
-                            "恢复成功",
+                            "已成功恢复官方原版！\n\n检测到 Claude 正在运行。需要重启 Claude 才能完全恢复为官方界面。\n\n是否立即帮您重启 Claude？",
+                            "恢复完成",
                             MessageBoxButtons.YesNo,
-                            MessageBoxIcon.Information);
+                            MessageBoxIcon.Question);
 
                         if (restartPrompt == DialogResult.Yes)
                         {
@@ -1043,7 +1069,7 @@ namespace CCZhAssistant
                     }
                     else
                     {
-                        MessageBox.Show("已成功恢复为官方英文原版。", "恢复成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show("已成功恢复为官方英文原版。", "恢复完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
             }
@@ -1069,16 +1095,12 @@ namespace CCZhAssistant
                     try { p.Kill(); } catch { }
                 }
 
-                Thread.Sleep(1200);
-
-                string lnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "Microsoft", "Windows", "Start Menu", "Programs", "Claude.lnk");
-                if (File.Exists(lnk))
+                if (processes.Length > 0)
                 {
-                    Process.Start(new ProcessStartInfo(lnk) { UseShellExecute = true });
-                    return;
+                    Thread.Sleep(1000);
                 }
 
+                // 1. Official execution alias (most reliable for MSIX WindowsApps on Windows 10/11)
                 string alias = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     "Microsoft", "WindowsApps", "claude-desktop.exe");
                 if (File.Exists(alias))
@@ -1087,6 +1109,25 @@ namespace CCZhAssistant
                     return;
                 }
 
+                // 2. Local unpackaged executable if installed in LocalAppData\Programs
+                string localExe = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Programs", "Claude", "Claude.exe");
+                if (File.Exists(localExe))
+                {
+                    Process.Start(new ProcessStartInfo(localExe) { UseShellExecute = true });
+                    return;
+                }
+
+                // 3. Start Menu Shortcut fallback
+                string lnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "Microsoft", "Windows", "Start Menu", "Programs", "Claude.lnk");
+                if (File.Exists(lnk))
+                {
+                    Process.Start(new ProcessStartInfo(lnk) { UseShellExecute = true });
+                    return;
+                }
+
+                // 4. Explorer shell AUMID fallback
                 Process.Start(new ProcessStartInfo("explorer.exe", "shell:AppsFolder\\Claude_pzs8sxrjxfjjc!Claude") { UseShellExecute = true });
             }
             catch { }
