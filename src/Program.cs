@@ -343,10 +343,10 @@ namespace CCZhAssistant
             settingsPanel.Controls.Add(packUpdateCheckBox);
             settingsPanel.Controls.Add(startupCheckBox);
 
-            settingsPanel.Controls.Add(CreateSettingDescription("运行期间自动检测 Claude 启动与状态。", 265, 50));
-            settingsPanel.Controls.Add(CreateSettingDescription("客户端版本升级后自动增量适配最新词条。", 265, 94));
-            settingsPanel.Controls.Add(CreateSettingDescription("优先读取最新词典包，无需重新下载助手。", 265, 138));
-            settingsPanel.Controls.Add(CreateSettingDescription("开机自启并默认最小化至系统托盘。", 265, 182));
+            settingsPanel.Controls.Add(CreateSettingDescription("运行期间自动检测 Claude 启动与状态。", 250, 50));
+            settingsPanel.Controls.Add(CreateSettingDescription("客户端版本升级后自动增量适配最新词条。", 250, 94));
+            settingsPanel.Controls.Add(CreateSettingDescription("优先读取最新词典包，无需重新下载助手。", 250, 138));
+            settingsPanel.Controls.Add(CreateSettingDescription("开机自启并默认最小化至系统托盘。", 250, 182));
 
             startupCheckBox.CheckedChanged += delegate
             {
@@ -407,11 +407,11 @@ namespace CCZhAssistant
 
             restartButton = new ModernButton();
             restartButton.Text = "重启 Claude";
-            restartButton.BackColor = Color.FromArgb(242, 244, 248);
-            restartButton.HoverBackColor = Color.FromArgb(230, 234, 240);
-            restartButton.PressedBackColor = Color.FromArgb(220, 224, 232);
-            restartButton.BorderColor = Color.FromArgb(210, 215, 225);
-            restartButton.ForeColor = Color.FromArgb(40, 44, 50);
+            restartButton.BackColor = Color.FromArgb(238, 243, 252);
+            restartButton.HoverBackColor = Color.FromArgb(224, 234, 250);
+            restartButton.PressedBackColor = Color.FromArgb(210, 224, 245);
+            restartButton.BorderColor = Color.FromArgb(190, 208, 238);
+            restartButton.ForeColor = Color.FromArgb(24, 90, 188);
             restartButton.Font = new Font("Microsoft YaHei UI", 9.5F, FontStyle.Bold);
             restartButton.Click += delegate { RestartClaude(); };
             Controls.Add(restartButton);
@@ -1536,7 +1536,8 @@ namespace CCZhAssistant
             cb.Font = new Font("Microsoft YaHei UI", 9.5F, FontStyle.Bold);
             cb.ForeColor = Color.FromArgb(31, 31, 31);
             cb.Location = new Point(left, top);
-            cb.Size = new Size(270, 26);
+            cb.AutoSize = true;
+            cb.BackColor = Color.Transparent;
             cb.Checked = isChecked;
             return cb;
         }
@@ -1548,7 +1549,8 @@ namespace CCZhAssistant
             label.Font = new Font("Microsoft YaHei UI", 9F);
             label.ForeColor = Color.FromArgb(115, 119, 125);
             label.Location = new Point(left, top);
-            label.Size = new Size(450, 24);
+            label.AutoSize = true;
+            label.BackColor = Color.Transparent;
             return label;
         }
 
@@ -1701,6 +1703,14 @@ namespace CCZhAssistant
             else if (isHovered && HoverBackColor != Color.Empty)
             {
                 bg = HoverBackColor;
+            }
+
+            if (Parent != null)
+            {
+                using (SolidBrush parentBrush = new SolidBrush(Parent.BackColor))
+                {
+                    g.FillRectangle(parentBrush, ClientRectangle);
+                }
             }
 
             Rectangle rect = new Rectangle(0, 0, Width - 1, Height - 1);
