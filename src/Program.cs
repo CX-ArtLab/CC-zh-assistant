@@ -146,7 +146,7 @@ namespace CCZhAssistant
         private bool busy;
         private bool isCurrentlyLocalized;
         private string detectedClaudeVersion = "未检测";
-        private static int translatedCount = 16366;
+        private static int translatedCount = 32597;
         private static int pendingCount = 0;
         private DateTime lastAppliedTime = DateTime.MinValue;
 
@@ -908,6 +908,10 @@ namespace CCZhAssistant
             if (!string.IsNullOrEmpty(translatorScript))
             {
                 File.WriteAllText(Path.Combine(ionDist, "translator.js"), translatorScript, Encoding.UTF8);
+                if (Directory.Exists(assetsDir))
+                {
+                    File.WriteAllText(Path.Combine(assetsDir, "translator.js"), translatorScript, Encoding.UTF8);
+                }
                 InjectTranslatorScript(Path.Combine(ionDist, "index.html"), BackupDirectory);
                 InjectTranslatorScript(Path.Combine(ionDist, "frame-shell.html"), BackupDirectory);
             }
@@ -960,6 +964,7 @@ namespace CCZhAssistant
             TryDeleteFile(Path.Combine(statsigDir, "zh-CN.json"));
             TryDeleteFile(Path.Combine(resources, "zh-CN.json"));
             TryDeleteFile(Path.Combine(ionDist, "translator.js"));
+            TryDeleteFile(Path.Combine(assetsDir, "translator.js"));
 
             // 2. Restore shared-*.js from backup
             if (Directory.Exists(assetsDir) && Directory.Exists(BackupDirectory))
@@ -1162,7 +1167,6 @@ namespace CCZhAssistant
             {
                 if (!File.Exists(htmlPath)) return;
                 string content = File.ReadAllText(htmlPath, Encoding.UTF8);
-                if (content.IndexOf("translator.js", StringComparison.OrdinalIgnoreCase) >= 0) return;
 
                 string fileName = Path.GetFileName(htmlPath);
                 string backupFile = Path.Combine(backupDir, fileName + ".orig");
@@ -1171,10 +1175,19 @@ namespace CCZhAssistant
                     File.Copy(htmlPath, backupFile, true);
                 }
 
+                if (content.IndexOf("./translator.js", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    content = content.Replace("./translator.js", "/translator.js");
+                    File.WriteAllText(htmlPath, content, Encoding.UTF8);
+                    return;
+                }
+
+                if (content.IndexOf("translator.js", StringComparison.OrdinalIgnoreCase) >= 0) return;
+
                 int headIdx = content.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
                 if (headIdx >= 0)
                 {
-                    string modified = content.Substring(0, headIdx) + "<script src=\"./translator.js\"></script>" + content.Substring(headIdx);
+                    string modified = content.Substring(0, headIdx) + "<script src=\"/translator.js\"></script>" + content.Substring(headIdx);
                     File.WriteAllText(htmlPath, modified, Encoding.UTF8);
                 }
             }
@@ -1259,6 +1272,7 @@ namespace CCZhAssistant
             }
             catch { }
 
+            IDictionary selectedPack = embeddedPack;
             if (File.Exists(PackPath))
             {
                 try
@@ -1271,14 +1285,28 @@ namespace CCZhAssistant
                         string embVer = embeddedPack != null && embeddedPack.Contains("version") && embeddedPack["version"] != null ? embeddedPack["version"].ToString() : "0.0.0";
                         if (CompareVersion(localVer, embVer) >= 0)
                         {
-                            return localPack;
+                            selectedPack = localPack;
                         }
                     }
                 }
                 catch { }
             }
 
-            return embeddedPack;
+            if (selectedPack != null)
+            {
+                int count = 0;
+                IDictionary f = selectedPack["frontend"] as IDictionary;
+                if (f != null) count += f.Count;
+                IDictionary d = selectedPack["desktop"] as IDictionary;
+                if (d != null) count += d.Count;
+                IDictionary dyn = selectedPack["dynamic"] as IDictionary;
+                if (dyn != null) count += dyn.Count;
+                IDictionary stat = selectedPack["statsig"] as IDictionary;
+                if (stat != null) count += stat.Count;
+                if (count > 0) translatedCount = count;
+            }
+
+            return selectedPack;
         }
 
         private async Task CheckPackUpdateAsync(bool forceFeedback)

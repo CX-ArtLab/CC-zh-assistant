@@ -1,13 +1,13 @@
 {
   "version": "1.1.0",
   "minAssistantVersion": "1.0.0",
-  "updatedAt": "2026-09-25T09:52:04.798871+00:00",
-  "totalEntries": 13062,
+  "updatedAt": "2026-09-26T09:05:00.000000+00:00",
+  "totalEntries": 32595,
   "downloadUrl": "https://raw.githubusercontent.com/CX-ArtLab/CC-zh-assistant/main/translation/translation-pack.json",
   "stats": {
     "desktop": 822,
     "dynamic": 47,
     "statsig": 46,
-    "frontend": 15451
+    "frontend": 31680
   }
 }

@@ -1177,6 +1177,26 @@
       return value.replace(trimmed, dictionary[trimmed]);
     }
 
+    // Check with trailing symbols stripped (e.g., "Accept edits +", "More options...")
+    const trailingMatch = trimmed.match(/^(.*?)\s*([+›»…:]|\.{3})$/);
+    if (trailingMatch) {
+      const core = trailingMatch[1].trim();
+      const symbol = trailingMatch[2];
+      if (Object.prototype.hasOwnProperty.call(dictionary, core)) {
+        return value.replace(trimmed, dictionary[core] + " " + symbol);
+      }
+    }
+
+    // Check with trailing parentheses stripped (e.g., "Accept edits (default)")
+    const trailingParen = trimmed.match(/^(.*?)\s*(\([^)]+\))$/);
+    if (trailingParen) {
+      const core = trailingParen[1].trim();
+      const paren = trailingParen[2];
+      if (Object.prototype.hasOwnProperty.call(dictionary, core)) {
+        return value.replace(trimmed, dictionary[core] + " " + paren);
+      }
+    }
+
     // Dynamic patterns
     let m = trimmed.match(/^Thought for (\d+)s$/);
     if (m) return value.replace(trimmed, `思考了 ${m[1]} 秒`);
