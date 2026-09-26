@@ -20,8 +20,8 @@ using Microsoft.Win32;
 [assembly: AssemblyDescription("Claude Desktop / Claude Code 离线界面汉化伴侣")]
 [assembly: AssemblyCompany("CX-ArtLab")]
 [assembly: AssemblyProduct("Claude Code 桌面版中文助手")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.2.0.0")]
+[assembly: AssemblyFileVersion("1.2.0.0")]
 
 namespace CCZhAssistant
 {
@@ -190,7 +190,7 @@ namespace CCZhAssistant
 
             updateHttp = new HttpClient();
             updateHttp.Timeout = TimeSpan.FromSeconds(8);
-            updateHttp.DefaultRequestHeaders.UserAgent.ParseAdd("CCZhAssistant/1.0.0");
+            updateHttp.DefaultRequestHeaders.UserAgent.ParseAdd("CCZhAssistant/1.2.0");
 
             InitializeComponents();
 
