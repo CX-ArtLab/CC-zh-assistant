@@ -120,6 +120,7 @@ namespace CCZhAssistant
         private const string AppName = "Claude Code 桌面版中文助手";
         private const string RunValueName = "CCZhAssistant";
         private const string PackManifestUrl = "https://raw.githubusercontent.com/CX-ArtLab/CC-zh-assistant/main/translation/manifest.json";
+        private static readonly Encoding Utf8NoBom = new UTF8Encoding(false);
 
         private readonly bool startupMode;
         private readonly EventWaitHandle activationEvent;
@@ -785,7 +786,7 @@ namespace CCZhAssistant
                     if (env.IsRunning)
                     {
                         DialogResult restartPrompt = MessageBox.Show(
-                            "中文汉化已成功部署！\n\n检测到 Claude 正在运行。需要重启 Claude 才能立即呈现中文，是否立即帮您重启？",
+                            "中文汉化已成功部署！\n\n【免重启生效】：可在 Claude 窗口中按 Ctrl+R 刷新当前界面。\n【全量生效（推荐）】：顶层菜单、右键菜单由系统主进程管理，重启后可 100% 完整生效。\n\n是否立即帮您重启 Claude？",
                             "汉化成功",
                             MessageBoxButtons.YesNo,
                             MessageBoxIcon.Information);
@@ -850,7 +851,7 @@ namespace CCZhAssistant
             if (frontendObj != null)
             {
                 string frontendJson = serializer.Serialize(frontendObj);
-                File.WriteAllText(Path.Combine(i18nDir, "zh-CN.json"), frontendJson, Encoding.UTF8);
+                File.WriteAllText(Path.Combine(i18nDir, "zh-CN.json"), frontendJson, Utf8NoBom);
             }
 
             // 2. Write dynamic zh-CN.json (models, thinking mode, features)
@@ -858,7 +859,7 @@ namespace CCZhAssistant
             if (dynamicObj != null)
             {
                 string dynamicJson = serializer.Serialize(dynamicObj);
-                File.WriteAllText(Path.Combine(dynamicDir, "zh-CN.json"), dynamicJson, Encoding.UTF8);
+                File.WriteAllText(Path.Combine(dynamicDir, "zh-CN.json"), dynamicJson, Utf8NoBom);
             }
 
             // 3. Write statsig zh-CN.json
@@ -866,7 +867,7 @@ namespace CCZhAssistant
             if (statsigObj != null)
             {
                 string statsigJson = serializer.Serialize(statsigObj);
-                File.WriteAllText(Path.Combine(statsigDir, "zh-CN.json"), statsigJson, Encoding.UTF8);
+                File.WriteAllText(Path.Combine(statsigDir, "zh-CN.json"), statsigJson, Utf8NoBom);
             }
 
             // 4. Write desktop zh-CN.json & patch resources/en-US.json fallback
@@ -874,7 +875,7 @@ namespace CCZhAssistant
             if (desktopObj != null)
             {
                 string desktopJson = serializer.Serialize(desktopObj);
-                File.WriteAllText(Path.Combine(resources, "zh-CN.json"), desktopJson, Encoding.UTF8);
+                File.WriteAllText(Path.Combine(resources, "zh-CN.json"), desktopJson, Utf8NoBom);
 
                 string enDesktopPath = Path.Combine(resources, "en-US.json");
                 if (File.Exists(enDesktopPath))
@@ -896,7 +897,7 @@ namespace CCZhAssistant
                             {
                                 enDict[de.Key.ToString()] = de.Value;
                             }
-                            File.WriteAllText(enDesktopPath, serializer.Serialize(enDict), Encoding.UTF8);
+                            File.WriteAllText(enDesktopPath, serializer.Serialize(enDict), Utf8NoBom);
                         }
                     }
                     catch { }
@@ -907,10 +908,10 @@ namespace CCZhAssistant
             string translatorScript = LoadTranslatorScript();
             if (!string.IsNullOrEmpty(translatorScript))
             {
-                File.WriteAllText(Path.Combine(ionDist, "translator.js"), translatorScript, Encoding.UTF8);
+                File.WriteAllText(Path.Combine(ionDist, "translator.js"), translatorScript, Utf8NoBom);
                 if (Directory.Exists(assetsDir))
                 {
-                    File.WriteAllText(Path.Combine(assetsDir, "translator.js"), translatorScript, Encoding.UTF8);
+                    File.WriteAllText(Path.Combine(assetsDir, "translator.js"), translatorScript, Utf8NoBom);
                 }
                 InjectTranslatorScript(Path.Combine(ionDist, "index.html"), BackupDirectory);
                 InjectTranslatorScript(Path.Combine(ionDist, "frame-shell.html"), BackupDirectory);
@@ -936,7 +937,7 @@ namespace CCZhAssistant
                         }
 
                         string patched = content.Replace(targetPattern, replacement);
-                        File.WriteAllText(jsFile, patched, Encoding.UTF8);
+                        File.WriteAllText(jsFile, patched, Utf8NoBom);
                         break;
                     }
                 }
@@ -1020,7 +1021,7 @@ namespace CCZhAssistant
                     if (env.IsRunning)
                     {
                         DialogResult restartPrompt = MessageBox.Show(
-                            "已成功恢复为官方英文原版！\n\n是否立即重启 Claude Desktop 生效？",
+                            "已成功恢复为官方英文原版！\n\n【免重启生效】：可在 Claude 窗口中按 Ctrl+R 刷新恢复英文界面。\n【全量生效（推荐）】：顶层菜单、右键菜单由系统主进程管理，重启后可 100% 恢复英文菜单。\n\n是否立即重启 Claude Desktop 生效？",
                             "恢复成功",
                             MessageBoxButtons.YesNo,
                             MessageBoxIcon.Information);
@@ -1098,7 +1099,7 @@ namespace CCZhAssistant
                 {
                     string dir = Path.GetDirectoryName(path);
                     if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-                    File.WriteAllText(path, "{\"locale\":\"" + locale + "\"}\n", Encoding.UTF8);
+                    File.WriteAllText(path, "{\"locale\":\"" + locale + "\"}\n", Utf8NoBom);
                     return;
                 }
 
@@ -1109,7 +1110,7 @@ namespace CCZhAssistant
 
                 dict["locale"] = locale;
                 string newJson = serializer.Serialize(dict);
-                File.WriteAllText(path, newJson, Encoding.UTF8);
+                File.WriteAllText(path, newJson, Utf8NoBom);
             }
             catch { }
         }
@@ -1178,7 +1179,7 @@ namespace CCZhAssistant
                 if (content.IndexOf("./translator.js", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     content = content.Replace("./translator.js", "/translator.js");
-                    File.WriteAllText(htmlPath, content, Encoding.UTF8);
+                    File.WriteAllText(htmlPath, content, Utf8NoBom);
                     return;
                 }
 
@@ -1188,7 +1189,7 @@ namespace CCZhAssistant
                 if (headIdx >= 0)
                 {
                     string modified = content.Substring(0, headIdx) + "<script src=\"/translator.js\"></script>" + content.Substring(headIdx);
-                    File.WriteAllText(htmlPath, modified, Encoding.UTF8);
+                    File.WriteAllText(htmlPath, modified, Utf8NoBom);
                 }
             }
             catch { }

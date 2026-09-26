@@ -1,13 +1,14 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "minAssistantVersion": "1.0.0",
-  "updatedAt": "2026-09-26T09:05:00.000000+00:00",
-  "totalEntries": 32595,
+  "updatedAt": "2026-09-26T10:05:40.286Z",
+  "totalEntries": 32606,
   "downloadUrl": "https://raw.githubusercontent.com/CX-ArtLab/CC-zh-assistant/main/translation/translation-pack.json",
   "stats": {
     "desktop": 822,
     "dynamic": 47,
     "statsig": 46,
     "frontend": 31680
-  }
+  },
+  "description": "Claude Desktop / Claude Code 全量汉化字典包（含全套桌面菜单、右键菜单、托盘及设置品牌名称）"
 }
