@@ -146,8 +146,9 @@ namespace CCZhAssistant
 
         private bool busy;
         private bool isCurrentlyLocalized;
+        private bool lastRunningState;
         private string detectedClaudeVersion = "未检测";
-        private static int translatedCount = 32597;
+        private static int translatedCount = 32606;
         private static int pendingCount = 0;
         private DateTime lastAppliedTime = DateTime.MinValue;
 
@@ -305,11 +306,11 @@ namespace CCZhAssistant
             detailLabel.Text = "检测到系统已安装 Claude Desktop。点击下方按钮即可一键应用汉化。";
             detailLabel.ForeColor = Color.FromArgb(80, 84, 90);
             detailLabel.Location = new Point(46, 48);
-            detailLabel.Size = new Size(630, 24);
+            detailLabel.Size = new Size(630, 38);
             statusPanel.Controls.Add(detailLabel);
 
             versionLabel = CreateMetricLabel(statusPanel, "Claude：检测中...", 24);
-            entryLabel = CreateMetricLabel(statusPanel, "已汉化：13,062 条", 200);
+            entryLabel = CreateMetricLabel(statusPanel, "已汉化：32,606 条", 200);
             unknownLabel = CreateMetricLabel(statusPanel, "待适配：0 条", 370);
             scanLabel = CreateMetricLabel(statusPanel, "状态：就绪", 530);
 
@@ -442,6 +443,7 @@ namespace CCZhAssistant
             trayMenu.MenuItems.Add("-");
             trayMenu.MenuItems.Add(new MenuItem("立即应用汉化", async delegate { await ApplyLocalizationAsync(true); }));
             trayMenu.MenuItems.Add(new MenuItem("恢复官方原版", async delegate { await RestoreOfficialAsync(true); }));
+            trayMenu.MenuItems.Add(new MenuItem("重启 Claude", delegate { RestartClaude(); }));
             trayMenu.MenuItems.Add("-");
             trayMenu.MenuItems.Add(new MenuItem("随 Windows 启动", delegate
             {
@@ -666,12 +668,20 @@ namespace CCZhAssistant
             versionLabel.Text = "Claude：v" + detectedClaudeVersion;
 
             isCurrentlyLocalized = CheckIfCurrentlyLocalized(env);
+            lastRunningState = env.IsRunning;
 
             if (isCurrentlyLocalized)
             {
                 statusDot.BackColor = Color.FromArgb(30, 142, 62); // Green
                 statusLabel.Text = "汉化已生效";
-                detailLabel.Text = "Claude 桌面版已成功配置为中文环境，支持所有对话与设置。";
+                if (env.IsRunning)
+                {
+                    detailLabel.Text = "对话与核心界面已即时生效。\n提示：顶层系统菜单将在下次启动 Claude 时自动同步。";
+                }
+                else
+                {
+                    detailLabel.Text = "Claude 桌面版已成功配置为中文环境，启动即可直接使用。";
+                }
                 applyButton.Enabled = true;
                 applyButton.Text = "恢复官方原版";
                 applyButton.BackColor = Color.FromArgb(60, 64, 70);
@@ -710,7 +720,7 @@ namespace CCZhAssistant
             if (!env.IsInstalled) return;
 
             bool localized = CheckIfCurrentlyLocalized(env);
-            if (localized != isCurrentlyLocalized)
+            if (localized != isCurrentlyLocalized || env.IsRunning != lastRunningState)
             {
                 EvaluateState();
             }
@@ -786,7 +796,7 @@ namespace CCZhAssistant
                     if (env.IsRunning)
                     {
                         DialogResult restartPrompt = MessageBox.Show(
-                            "中文汉化已成功部署！\n\n【免重启生效】：可在 Claude 窗口中按 Ctrl+R 刷新当前界面。\n【全量生效（推荐）】：顶层菜单、右键菜单由系统主进程管理，重启后可 100% 完整生效。\n\n是否立即帮您重启 Claude？",
+                            "中文汉化已成功部署！\n\n主界面与对话功能已即时就绪。\n由于顶层系统菜单需重启加载，是否顺便帮您重启 Claude？\n\n（若选择“否”，顶层菜单将在下次打开 Claude 时自动生效）",
                             "汉化成功",
                             MessageBoxButtons.YesNo,
                             MessageBoxIcon.Information);
@@ -799,7 +809,7 @@ namespace CCZhAssistant
                     else
                     {
                         MessageBox.Show(
-                            "中文汉化已成功应用！\n启动 Claude Desktop 即可直接呈现全中文界面。",
+                            "中文汉化已成功部署！\n启动 Claude Desktop 即可直接呈现全中文界面。",
                             "汉化成功",
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Information);
@@ -1021,7 +1031,7 @@ namespace CCZhAssistant
                     if (env.IsRunning)
                     {
                         DialogResult restartPrompt = MessageBox.Show(
-                            "已成功恢复为官方英文原版！\n\n【免重启生效】：可在 Claude 窗口中按 Ctrl+R 刷新恢复英文界面。\n【全量生效（推荐）】：顶层菜单、右键菜单由系统主进程管理，重启后可 100% 恢复英文菜单。\n\n是否立即重启 Claude Desktop 生效？",
+                            "已成功恢复为官方英文原版！\n\n主界面已还原。\n是否立即帮您重启 Claude 以完全恢复顶层菜单？\n\n（若选择“否”，将在下次打开 Claude 时完全恢复）",
                             "恢复成功",
                             MessageBoxButtons.YesNo,
                             MessageBoxIcon.Information);
