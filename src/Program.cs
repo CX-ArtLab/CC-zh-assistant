@@ -137,9 +137,11 @@ namespace CCZhAssistant
         private Label unknownLabel;
         private Label scanLabel;
 
-        private Button applyButton;
-        private Button hideButton;
-        private Button restartButton;
+        private ModernButton applyButton;
+        private ModernButton hideButton;
+        private ModernButton restartButton;
+        private ModernButton openDataButton;
+        private ModernButton exitButton;
         private CheckBox monitorCheckBox;
         private CheckBox adaptCheckBox;
         private CheckBox packUpdateCheckBox;
@@ -231,7 +233,7 @@ namespace CCZhAssistant
             MinimizeBox = true;
             AutoScaleMode = AutoScaleMode.Dpi;
             AutoScaleDimensions = new SizeF(96F, 96F);
-            ClientSize = new Size(760, 620);
+            ClientSize = new Size(800, 630);
             Font = new Font("Microsoft YaHei UI", 9F);
             Icon = LoadAssistantIcon();
             BackColor = Color.FromArgb(248, 250, 253);
@@ -239,7 +241,7 @@ namespace CCZhAssistant
             // Header Gradient Panel
             GradientPanel header = new GradientPanel();
             header.Location = new Point(0, 0);
-            header.Size = new Size(760, 105);
+            header.Size = new Size(800, 105);
             header.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             header.Color1 = Color.FromArgb(254, 250, 248);
             header.Color2 = Color.FromArgb(248, 250, 253);
@@ -248,7 +250,7 @@ namespace CCZhAssistant
             PictureBox logo = new PictureBox();
             logo.Image = LoadAssistantBitmap();
             logo.SizeMode = PictureBoxSizeMode.Zoom;
-            logo.Location = new Point(32, 22);
+            logo.Location = new Point(28, 22);
             logo.Size = new Size(54, 54);
             header.Controls.Add(logo);
 
@@ -257,7 +259,7 @@ namespace CCZhAssistant
             title.Font = new Font("Microsoft YaHei UI", 16F, FontStyle.Bold);
             title.ForeColor = Color.FromArgb(31, 31, 31);
             title.BackColor = Color.Transparent;
-            title.Location = new Point(100, 18);
+            title.Location = new Point(96, 18);
             title.AutoSize = true;
             header.Controls.Add(title);
 
@@ -265,7 +267,7 @@ namespace CCZhAssistant
             subtitle.Text = "外挂伴侣 · 离线优先 · 一键应用 · 无损还原";
             subtitle.ForeColor = Color.FromArgb(100, 104, 110);
             subtitle.BackColor = Color.Transparent;
-            subtitle.Location = new Point(102, 58);
+            subtitle.Location = new Point(98, 58);
             subtitle.Size = new Size(420, 24);
             header.Controls.Add(subtitle);
 
@@ -275,7 +277,7 @@ namespace CCZhAssistant
             versionBadge.ForeColor = Color.FromArgb(195, 75, 45);
             versionBadge.BackColor = Color.FromArgb(255, 237, 232);
             versionBadge.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            versionBadge.Location = new Point(640, 32);
+            versionBadge.Location = new Point(688, 32);
             versionBadge.Size = new Size(84, 30);
             versionBadge.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             ApplyRoundedRegion(versionBadge, 15);
@@ -283,8 +285,8 @@ namespace CCZhAssistant
 
             // Status Panel
             CardPanel statusPanel = new CardPanel();
-            statusPanel.Location = new Point(32, 115);
-            statusPanel.Size = new Size(696, 136);
+            statusPanel.Location = new Point(28, 115);
+            statusPanel.Size = new Size(744, 136);
             statusPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             Controls.Add(statusPanel);
 
@@ -304,23 +306,23 @@ namespace CCZhAssistant
             statusPanel.Controls.Add(statusLabel);
 
             detailLabel = new Label();
-            detailLabel.Text = "检测到系统已安装 Claude Desktop。点击下方按钮即可一键应用汉化。";
+            detailLabel.Text = "检测到系统已安装 Claude Desktop。点击下方“立即检测并应用”一键部署汉化。";
             detailLabel.ForeColor = Color.FromArgb(80, 84, 90);
-            detailLabel.Location = new Point(46, 48);
-            detailLabel.Size = new Size(630, 38);
+            detailLabel.Location = new Point(46, 46);
+            detailLabel.Size = new Size(670, 38);
             statusPanel.Controls.Add(detailLabel);
 
             versionLabel = CreateMetricLabel(statusPanel, "Claude：检测中...", 24);
-            entryLabel = CreateMetricLabel(statusPanel, "已汉化：32,606 条", 200);
-            unknownLabel = CreateMetricLabel(statusPanel, "待适配：0 条", 370);
-            scanLabel = CreateMetricLabel(statusPanel, "状态：就绪", 530);
+            entryLabel = CreateMetricLabel(statusPanel, "已汉化：32,606 条", 205);
+            unknownLabel = CreateMetricLabel(statusPanel, "待适配：0 条", 385);
+            scanLabel = CreateMetricLabel(statusPanel, "状态：就绪", 545);
 
             versionLabel.Top = entryLabel.Top = unknownLabel.Top = scanLabel.Top = 94;
 
             // Automation Settings Panel
             CardPanel settingsPanel = new CardPanel();
-            settingsPanel.Location = new Point(32, 265);
-            settingsPanel.Size = new Size(696, 265);
+            settingsPanel.Location = new Point(28, 265);
+            settingsPanel.Size = new Size(744, 265);
             settingsPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             Controls.Add(settingsPanel);
 
@@ -341,10 +343,10 @@ namespace CCZhAssistant
             settingsPanel.Controls.Add(packUpdateCheckBox);
             settingsPanel.Controls.Add(startupCheckBox);
 
-            settingsPanel.Controls.Add(CreateSettingDescription("运行期间自动检测 Claude 启动与状态。", 310, 50));
-            settingsPanel.Controls.Add(CreateSettingDescription("客户端版本升级后自动增量适配并重写配置。", 310, 94));
-            settingsPanel.Controls.Add(CreateSettingDescription("优先读取最新词典包，无需重新下载助手。", 310, 138));
-            settingsPanel.Controls.Add(CreateSettingDescription("开机自启并默认最小化至系统托盘。", 310, 182));
+            settingsPanel.Controls.Add(CreateSettingDescription("运行期间自动检测 Claude 启动与状态。", 265, 50));
+            settingsPanel.Controls.Add(CreateSettingDescription("客户端版本升级后自动增量适配最新词条。", 265, 94));
+            settingsPanel.Controls.Add(CreateSettingDescription("优先读取最新词典包，无需重新下载助手。", 265, 138));
+            settingsPanel.Controls.Add(CreateSettingDescription("开机自启并默认最小化至系统托盘。", 265, 182));
 
             startupCheckBox.CheckedChanged += delegate
             {
@@ -356,21 +358,21 @@ namespace CCZhAssistant
             packUpdateCheckBox.CheckedChanged += delegate { SaveSettings(); };
 
             Label privacyLabel = new Label();
-            privacyLabel.Text = "安全保障：仅处理系统界面元素，不修改对话内容、代码或项目文件；随时可一键完全恢复。";
+            privacyLabel.Text = "安全承诺：仅适配客户端界面元素，绝不收集或修改您的对话、代码与工程文件。";
             privacyLabel.ForeColor = Color.FromArgb(120, 124, 130);
             privacyLabel.Location = new Point(24, 228);
-            privacyLabel.Size = new Size(648, 22);
+            privacyLabel.Size = new Size(696, 22);
             privacyLabel.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
             settingsPanel.Controls.Add(privacyLabel);
 
-            Button exitButton = new Button();
+            exitButton = new ModernButton();
             exitButton.Text = "退出助手";
-            exitButton.Size = new Size(95, 44);
-            exitButton.BackColor = Color.FromArgb(240, 242, 246);
+            exitButton.BackColor = Color.FromArgb(242, 244, 248);
+            exitButton.HoverBackColor = Color.FromArgb(230, 234, 240);
+            exitButton.PressedBackColor = Color.FromArgb(220, 224, 232);
+            exitButton.BorderColor = Color.FromArgb(220, 224, 230);
             exitButton.ForeColor = Color.FromArgb(90, 94, 100);
             exitButton.Font = new Font("Microsoft YaHei UI", 9.5F);
-            exitButton.FlatStyle = FlatStyle.Flat;
-            exitButton.FlatAppearance.BorderSize = 0;
             exitButton.Click += delegate
             {
                 trayIcon.Visible = false;
@@ -378,68 +380,73 @@ namespace CCZhAssistant
             };
             Controls.Add(exitButton);
 
-            Button openDataButton = new Button();
+            openDataButton = new ModernButton();
             openDataButton.Text = "打开配置目录";
-            openDataButton.Size = new Size(115, 44);
-            openDataButton.BackColor = Color.FromArgb(240, 242, 246);
-            openDataButton.ForeColor = Color.FromArgb(90, 94, 100);
+            openDataButton.BackColor = Color.FromArgb(242, 244, 248);
+            openDataButton.HoverBackColor = Color.FromArgb(230, 234, 240);
+            openDataButton.PressedBackColor = Color.FromArgb(220, 224, 232);
+            openDataButton.BorderColor = Color.FromArgb(220, 224, 230);
+            openDataButton.ForeColor = Color.FromArgb(70, 74, 80);
             openDataButton.Font = new Font("Microsoft YaHei UI", 9.5F);
-            openDataButton.FlatStyle = FlatStyle.Flat;
-            openDataButton.FlatAppearance.BorderSize = 0;
             openDataButton.Click += delegate
             {
                 try { Process.Start("explorer.exe", DataDirectory); } catch { }
             };
             Controls.Add(openDataButton);
 
-            applyButton = new Button();
-            applyButton.Text = "立即检测并应用";
-            applyButton.Size = new Size(190, 44);
-            applyButton.BackColor = Color.FromArgb(217, 119, 87);
-            applyButton.ForeColor = Color.White;
-            applyButton.Font = new Font("Microsoft YaHei UI", 10.5F, FontStyle.Bold);
-            applyButton.FlatStyle = FlatStyle.Flat;
-            applyButton.FlatAppearance.BorderSize = 0;
-            applyButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(193, 95, 60);
-            applyButton.Click += async delegate { await OnApplyButtonClickedAsync(); };
-            Controls.Add(applyButton);
-
-            restartButton = new Button();
-            restartButton.Text = "重启 Claude";
-            restartButton.Size = new Size(115, 44);
-            restartButton.BackColor = Color.FromArgb(240, 242, 246);
-            restartButton.ForeColor = Color.FromArgb(60, 64, 70);
-            restartButton.Font = new Font("Microsoft YaHei UI", 9.5F);
-            restartButton.FlatStyle = FlatStyle.Flat;
-            restartButton.FlatAppearance.BorderSize = 0;
-            restartButton.Click += delegate { RestartClaude(); };
-            Controls.Add(restartButton);
-
-            hideButton = new Button();
+            hideButton = new ModernButton();
             hideButton.Text = "最小化到托盘";
-            hideButton.Size = new Size(130, 44);
-            hideButton.BackColor = Color.FromArgb(240, 242, 246);
-            hideButton.ForeColor = Color.FromArgb(60, 64, 70);
+            hideButton.BackColor = Color.FromArgb(242, 244, 248);
+            hideButton.HoverBackColor = Color.FromArgb(230, 234, 240);
+            hideButton.PressedBackColor = Color.FromArgb(220, 224, 232);
+            hideButton.BorderColor = Color.FromArgb(220, 224, 230);
+            hideButton.ForeColor = Color.FromArgb(70, 74, 80);
             hideButton.Font = new Font("Microsoft YaHei UI", 9.5F);
-            hideButton.FlatStyle = FlatStyle.Flat;
-            hideButton.FlatAppearance.BorderSize = 0;
             hideButton.Click += delegate { HideToTray(); };
             Controls.Add(hideButton);
 
+            restartButton = new ModernButton();
+            restartButton.Text = "重启 Claude";
+            restartButton.BackColor = Color.FromArgb(242, 244, 248);
+            restartButton.HoverBackColor = Color.FromArgb(230, 234, 240);
+            restartButton.PressedBackColor = Color.FromArgb(220, 224, 232);
+            restartButton.BorderColor = Color.FromArgb(210, 215, 225);
+            restartButton.ForeColor = Color.FromArgb(40, 44, 50);
+            restartButton.Font = new Font("Microsoft YaHei UI", 9.5F, FontStyle.Bold);
+            restartButton.Click += delegate { RestartClaude(); };
+            Controls.Add(restartButton);
+
+            applyButton = new ModernButton();
+            applyButton.Text = "立即检测并应用";
+            applyButton.BackColor = Color.FromArgb(217, 119, 87);
+            applyButton.HoverBackColor = Color.FromArgb(193, 95, 60);
+            applyButton.PressedBackColor = Color.FromArgb(170, 80, 50);
+            applyButton.ForeColor = Color.White;
+            applyButton.Font = new Font("Microsoft YaHei UI", 10F, FontStyle.Bold);
+            applyButton.Click += async delegate { await OnApplyButtonClickedAsync(); };
+            Controls.Add(applyButton);
+
             Action updateButtonLayout = delegate
             {
-                int btnHeight = 44;
-                int btnY = ClientSize.Height - btnHeight - 22;
-                exitButton.Location = new Point(32, btnY);
+                int btnHeight = 42;
+                int btnY = ClientSize.Height - btnHeight - 20;
+
+                // Left Utilities
+                exitButton.Size = new Size(92, btnHeight);
+                exitButton.Location = new Point(28, btnY);
+
+                openDataButton.Size = new Size(115, btnHeight);
                 openDataButton.Location = new Point(exitButton.Right + 10, btnY);
-                restartButton.Location = new Point(openDataButton.Right + 10, btnY);
-                applyButton.Location = new Point(ClientSize.Width - 32 - applyButton.Width, btnY);
-                hideButton.Location = new Point(applyButton.Left - 12 - hideButton.Width, btnY);
-                ApplyRoundedRegion(exitButton, 22);
-                ApplyRoundedRegion(openDataButton, 22);
-                ApplyRoundedRegion(restartButton, 22);
-                ApplyRoundedRegion(applyButton, 22);
-                ApplyRoundedRegion(hideButton, 22);
+
+                // Right Actions
+                applyButton.Size = new Size(160, btnHeight);
+                applyButton.Location = new Point(ClientSize.Width - 28 - applyButton.Width, btnY);
+
+                restartButton.Size = new Size(115, btnHeight);
+                restartButton.Location = new Point(applyButton.Left - 10 - restartButton.Width, btnY);
+
+                hideButton.Size = new Size(115, btnHeight);
+                hideButton.Location = new Point(restartButton.Left - 10 - hideButton.Width, btnY);
             };
 
             updateButtonLayout();
@@ -691,25 +698,31 @@ namespace CCZhAssistant
                 statusLabel.Text = "汉化已部署";
                 if (env.IsRunning)
                 {
-                    detailLabel.Text = "汉化包已部署完成。若当前窗口仍显示英文，请点击下方“重启 Claude”生效。";
+                    detailLabel.Text = "汉化包已部署完成。若当前窗口未刷新，请点击下方“重启 Claude”生效。";
                 }
                 else
                 {
-                    detailLabel.Text = "Claude 桌面版已成功配置为中文环境，启动即可直接使用。";
+                    detailLabel.Text = "Claude 桌面版已成功配置为中文环境，启动即可直接使用全中文界面。";
                 }
                 applyButton.Enabled = true;
                 applyButton.Text = "恢复官方原版";
                 applyButton.BackColor = Color.FromArgb(60, 64, 70);
+                applyButton.HoverBackColor = Color.FromArgb(45, 48, 54);
+                applyButton.PressedBackColor = Color.FromArgb(30, 32, 36);
+                applyButton.Invalidate();
                 scanLabel.Text = "状态：已部署";
             }
             else
             {
                 statusDot.BackColor = Color.FromArgb(26, 115, 232); // Blue
                 statusLabel.Text = "准备就绪";
-                detailLabel.Text = "检测到系统已安装 Claude Desktop。点击下方按钮即可一键部署汉化包。";
+                detailLabel.Text = "检测到系统已安装 Claude Desktop。点击下方“立即检测并应用”一键部署汉化。";
                 applyButton.Enabled = true;
                 applyButton.Text = "立即检测并应用";
                 applyButton.BackColor = Color.FromArgb(217, 119, 87);
+                applyButton.HoverBackColor = Color.FromArgb(193, 95, 60);
+                applyButton.PressedBackColor = Color.FromArgb(170, 80, 50);
+                applyButton.Invalidate();
                 scanLabel.Text = "状态：官方原版";
             }
 
@@ -717,6 +730,7 @@ namespace CCZhAssistant
             {
                 restartButton.Enabled = env.IsInstalled;
                 restartButton.Text = env.IsRunning ? "重启 Claude" : "启动 Claude";
+                restartButton.Invalidate();
             }
 
             UpdateStatsDisplay();
@@ -1534,7 +1548,7 @@ namespace CCZhAssistant
             label.Font = new Font("Microsoft YaHei UI", 9F);
             label.ForeColor = Color.FromArgb(115, 119, 125);
             label.Location = new Point(left, top);
-            label.Size = new Size(360, 24);
+            label.Size = new Size(450, 24);
             return label;
         }
 
@@ -1612,6 +1626,103 @@ namespace CCZhAssistant
             }
             catch { }
             return SystemIcons.Application.ToBitmap();
+        }
+    }
+
+    internal sealed class ModernButton : Button
+    {
+        public int CornerRadius { get; set; }
+        public Color BorderColor { get; set; }
+        public Color HoverBackColor { get; set; }
+        public Color PressedBackColor { get; set; }
+
+        private bool isHovered;
+        private bool isPressed;
+
+        public ModernButton()
+        {
+            DoubleBuffered = true;
+            CornerRadius = 8;
+            FlatStyle = FlatStyle.Flat;
+            FlatAppearance.BorderSize = 0;
+            BorderColor = Color.Empty;
+            Cursor = Cursors.Hand;
+            SetStyle(ControlStyles.Selectable | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
+        }
+
+        protected override void OnMouseEnter(EventArgs e)
+        {
+            isHovered = true;
+            Invalidate();
+            base.OnMouseEnter(e);
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            isHovered = false;
+            isPressed = false;
+            Invalidate();
+            base.OnMouseLeave(e);
+        }
+
+        protected override void OnMouseDown(MouseEventArgs mevent)
+        {
+            if (mevent.Button == MouseButtons.Left)
+            {
+                isPressed = true;
+                Invalidate();
+            }
+            base.OnMouseDown(mevent);
+        }
+
+        protected override void OnMouseUp(MouseEventArgs mevent)
+        {
+            isPressed = false;
+            Invalidate();
+            base.OnMouseUp(mevent);
+        }
+
+        protected override void OnPaint(PaintEventArgs pevent)
+        {
+            Graphics g = pevent.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+
+            Color bg = BackColor;
+            if (!Enabled)
+            {
+                bg = Color.FromArgb(235, 238, 242);
+            }
+            else if (isPressed && PressedBackColor != Color.Empty)
+            {
+                bg = PressedBackColor;
+            }
+            else if (isHovered && HoverBackColor != Color.Empty)
+            {
+                bg = HoverBackColor;
+            }
+
+            Rectangle rect = new Rectangle(0, 0, Width - 1, Height - 1);
+            using (GraphicsPath path = MainForm.RoundedRectangle(rect, CornerRadius))
+            {
+                using (SolidBrush brush = new SolidBrush(bg))
+                {
+                    g.FillPath(brush, path);
+                }
+
+                if (BorderColor != Color.Empty && Enabled)
+                {
+                    using (Pen pen = new Pen(BorderColor, 1F))
+                    {
+                        g.DrawPath(pen, path);
+                    }
+                }
+            }
+
+            Color textColor = Enabled ? ForeColor : Color.FromArgb(160, 164, 170);
+            TextRenderer.DrawText(g, Text, Font, ClientRectangle, textColor,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine);
         }
     }
 
