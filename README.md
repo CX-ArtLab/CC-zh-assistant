@@ -1,7 +1,7 @@
 <div align="center">
   <img src="src/Assets/assistant-icon.png" width="128" height="128" alt="Claude Code 桌面版中文助手 图标" />
   <h1>Claude Code 桌面版中文助手</h1>
-  <p>面向 Windows / macOS (Apple Silicon) 的 Claude Desktop / Claude Code 极简外挂式界面汉化伴侣</p>
+  <p>面向 Windows / macOS (Apple Silicon) / Linux (Ubuntu/Debian 通用) 的 Claude Desktop / Claude Code 极简外挂式界面汉化伴侣</p>
 </div>
 
 **Claude Code 桌面版中文助手**（CC 中文助手 / `CCZhAssistant`）是一个专为 Claude Desktop 及 Claude Code 桌面环境打造的非官方外挂式汉化伴侣程序。它采用与官方程序隔离的安全部署方式，不修改核心签名与二进制执行逻辑，不破坏 Cowork 沙箱及工作区功能，支持一键应用全中文界面，并随时可一键无损还原官方原版。
@@ -33,6 +33,26 @@
 > xattr -cr /Applications/CCZhAssistant-macOS-apple-silicon.app
 > ```
 
+### Linux / Ubuntu 用户使用
+
+1. 从 [Releases](https://github.com/CX-ArtLab/CC-zh-assistant/releases/latest) 下载最新版本的 `CCZhAssistant-linux.zip`。
+2. 解压压缩包：
+   ```bash
+   unzip CCZhAssistant-linux.zip -d CCZhAssistant-linux
+   cd CCZhAssistant-linux
+   ```
+3. 运行助手：
+   - **图形桌面用户**：直接双击或在终端中运行 `./CCZhAssistant-linux-x64`（界面风格与 Windows/macOS 保持统一）。
+   - **一键快捷配置**：运行 `bash install.sh`，自动应用汉化并在系统应用菜单中创建启动快捷方式。
+   - **终端/无桌面环境**：支持命令行参数无界面运行：
+     - `./CCZhAssistant-linux-x64 --apply`（一键应用汉化）
+     - `./CCZhAssistant-linux-x64 --restore`（一键恢复原版）
+     - `./CCZhAssistant-linux-x64 --status`（查看状态）
+4. **权限说明**：若 Claude Desktop 安装在 `/opt/` 或 `/usr/` 等系统级只读目录，请使用 `sudo` 运行进行汉化：
+   ```bash
+   sudo ./CCZhAssistant-linux-x64 --apply
+   ```
+
 <div align="center">
   <img src="docs/ui-preview.png" width="480" alt="Claude Code 中文助手 界面预览" />
 </div>
@@ -41,7 +61,7 @@
 
 ## 当前功能特性
 
-- **跨平台原生支持**：同时提供 Windows 原生高性能单文件客户端与 macOS (Apple Silicon M1/M2/M3/M4) 原生 SwiftUI 伴侣客户端。
+- **三端原生跨平台支持**：同时提供 Windows 原生高性能单文件客户端、macOS (Apple Silicon M1/M2/M3/M4) 原生 SwiftUI 客户端以及 Linux (Ubuntu/Debian/Arch/Fedora) 通用伴侣。
 - **非破坏性外挂伴侣**：不改写核心数字签名与二进制逻辑，保障 Cowork 沙箱及工作区完全可用。
 - **一键应用与一键还原**：自动备份原始配置，随时可一键完美还原至官方原版英文状态。
 - **海量词典预置**：内置打包 32,600+ 条官方界面与交互词条（涵盖前端、会话、设置、侧边栏、快捷键与模型选项等，全面人工清洗机翻痕迹）。
@@ -59,6 +79,7 @@
 | :--- | :--- | :--- | :--- |
 | **Windows** | Windows 10 / 11（64 位） | x64 / ARM64 (兼容层) | 官方 Claude Desktop (MSIX 应用商店版或普通免打包版) |
 | **macOS** | macOS 12 Monterey 及更高 | Apple Silicon (M1/M2/M3/M4) | 官方 Claude Desktop for Mac |
+| **Linux** | Ubuntu 20.04/22.04/24.04、Debian 11/12、Arch、Fedora 等通用 | x86_64 / amd64（独立二进制），亦支持 Python 3 跨架构运行 | 官方 Claude Desktop (APT/deb)、AUR 包或社区版 |
 
 ---
 
@@ -83,6 +104,16 @@ bash macOS/build-macos.sh
 ```
 
 脚本会自动使用 Swift Package Manager（`swift build`）编译原生 Apple Silicon 可执行文件，组装包含图标和内嵌资源的 `.app` 应用程序包，并生成便携分发文件 `dist/CCZhAssistant-macOS-apple-silicon.zip`。
+
+### Linux 版本编译
+
+在 Linux 终端中运行：
+
+```bash
+bash linux/build-linux.sh
+```
+
+脚本会使用 PyInstaller 将应用与全量内嵌资源打包为免依赖的单个独立可执行文件 `dist/CCZhAssistant-linux-x64`，并生成便携归档包 `dist/CCZhAssistant-linux.zip`。
 
 ---
 
