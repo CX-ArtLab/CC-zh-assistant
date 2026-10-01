@@ -125,7 +125,7 @@ namespace CCZhAssistant
 
         private const string AppName = "Claude Code 桌面版中文助手";
         private const string RunValueName = "CCZhAssistant";
-        private const string PackManifestUrl = "https://raw.githubusercontent.com/CX-ArtLab/CC-zh-assistant/main/translation/manifest.json";
+        private const string PackManifestUrl = "https://raw.githubusercontent.com/CX-ArtLab/Claude-Desktop-zh-assistant/main/translation/manifest.json";
         private static readonly Encoding Utf8NoBom = new UTF8Encoding(false);
 
         private readonly bool startupMode;

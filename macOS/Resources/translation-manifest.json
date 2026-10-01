@@ -3,7 +3,7 @@
   "minAssistantVersion": "1.0.0",
   "updatedAt": "2026-09-29T14:30:00.000Z",
   "totalEntries": 32606,
-  "downloadUrl": "https://raw.githubusercontent.com/CX-ArtLab/CC-zh-assistant/main/translation/translation-pack.json",
+  "downloadUrl": "https://raw.githubusercontent.com/CX-ArtLab/Claude-Desktop-zh-assistant/main/translation/translation-pack.json",
   "stats": {
     "desktop": 822,
     "dynamic": 47,

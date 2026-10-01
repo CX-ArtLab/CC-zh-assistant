@@ -5,7 +5,7 @@ import Darwin
 
 private let appName = "Claude Code 中文助手"
 private let appVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "1.4.0"
-private let manifestURL = URL(string: "https://raw.githubusercontent.com/CX-ArtLab/CC-zh-assistant/main/translation/manifest.json")!
+private let manifestURL = URL(string: "https://raw.githubusercontent.com/CX-ArtLab/Claude-Desktop-zh-assistant/main/translation/manifest.json")!
 
 private func assistantIconImage() -> NSImage {
     if let bundled = Bundle.main.url(forResource: "assistant-icon", withExtension: "png"),
@@ -568,7 +568,7 @@ private final class AppModel: ObservableObject {
 }
 
 private enum LaunchAtLogin {
-    static let label = "com.cxartlab.cc-zh-assistant"
+    static let label = "com.cxartlab.claude-desktop-zh-assistant"
 
     static var isEnabled: Bool {
         FileManager.default.fileExists(atPath: agentURL.path)

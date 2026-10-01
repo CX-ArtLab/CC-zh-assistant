@@ -19,11 +19,11 @@ from pathlib import Path
 
 APP_NAME = "Claude Code 桌面版中文助手"
 APP_VERSION = "1.4.0"
-MANIFEST_URL = "https://raw.githubusercontent.com/CX-ArtLab/CC-zh-assistant/main/translation/manifest.json"
+MANIFEST_URL = "https://raw.githubusercontent.com/CX-ArtLab/Claude-Desktop-zh-assistant/main/translation/manifest.json"
 DATA_DIR = Path.home() / ".local" / "share" / "Claude Code 中文助手"
 BACKUP_DIR = DATA_DIR / "backups"
-CONFIG_DIR = Path.home() / ".config" / "cc-zh-assistant"
-AUTOSTART_FILE = Path.home() / ".config" / "autostart" / "cc-zh-assistant.desktop"
+CONFIG_DIR = Path.home() / ".config" / "claude-desktop-zh-assistant"
+AUTOSTART_FILE = Path.home() / ".config" / "autostart" / "claude-desktop-zh-assistant.desktop"
 
 def get_resource_path(filename: str) -> Path:
     """获取资源文件路径（支持 PyInstaller 单文件打包与源码运行）"""

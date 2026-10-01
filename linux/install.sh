@@ -29,7 +29,7 @@ else
 fi
 
 mkdir -p "$APP_DIR"
-DESKTOP_FILE="$APP_DIR/cc-zh-assistant.desktop"
+DESKTOP_FILE="$APP_DIR/claude-desktop-zh-assistant.desktop"
 
 ICON_PATH="$SCRIPT_DIR/Resources/assistant-icon.png"
 if [ ! -f "$ICON_PATH" ]; then

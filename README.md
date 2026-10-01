@@ -12,7 +12,7 @@
 
 ### Windows 用户使用
 
-1. 从 [Releases](https://github.com/CX-ArtLab/CC-zh-assistant/releases/latest) 下载最新版本的 `CCZhAssistant-windows.zip`。
+1. 从 [Releases](https://github.com/CX-ArtLab/Claude-Desktop-zh-assistant/releases/latest) 下载最新版本的 `CCZhAssistant-windows.zip`。
 2. 将 ZIP 解压到任意文件夹。无需安装开发环境，也不需要将 EXE 放入 Claude 安装目录。
 3. 运行解压后的 `CCZhAssistant.exe`。
 4. 点击主卡片中的 **“立即应用汉化”** 胶囊按钮即可一键完成汉化。
@@ -23,7 +23,7 @@
 
 ### macOS 用户使用（Apple Silicon）
 
-1. 从 [Releases](https://github.com/CX-ArtLab/CC-zh-assistant/releases/latest) 下载最新版本的 `CCZhAssistant-macOS-apple-silicon.zip`。
+1. 从 [Releases](https://github.com/CX-ArtLab/Claude-Desktop-zh-assistant/releases/latest) 下载最新版本的 `CCZhAssistant-macOS-apple-silicon.zip`。
 2. 双击解压得到 `CCZhAssistant-macOS-apple-silicon.app`，将其拖入 **“访达 (Finder) -> 应用程序 (/Applications)”** 中。
 3. 双击运行助手，点击 **“立即应用汉化”**。应用完成后若 Claude 处于运行状态，点击 **“重启 Claude”** 即可体验完整中文界面。
 4. 如需开机自启或同步最新词典，勾选界面中的“开机启动”与“自动更新”即可。
@@ -35,7 +35,7 @@
 
 ### Linux / Ubuntu 用户使用
 
-1. 从 [Releases](https://github.com/CX-ArtLab/CC-zh-assistant/releases/latest) 下载最新版本的 `CCZhAssistant-linux.zip`。
+1. 从 [Releases](https://github.com/CX-ArtLab/Claude-Desktop-zh-assistant/releases/latest) 下载最新版本的 `CCZhAssistant-linux.zip`。
 2. 解压压缩包：
    ```bash
    unzip CCZhAssistant-linux.zip -d CCZhAssistant-linux

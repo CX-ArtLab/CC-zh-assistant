@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>CCZhAssistantMac</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.cxartlab.cc-zh-assistant</string>
+	<string>com.cxartlab.claude-desktop-zh-assistant</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleIconFile</key>
